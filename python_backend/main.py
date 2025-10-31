@@ -2,10 +2,10 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 import asyncio
-from typing import List
+import os
 import logging
 
-from agents.orchestrator import AgentOrchestrator
+from agents.strands_orchestrator import StrandsAgentOrchestrator
 from agents.websocket_manager import ConnectionManager
 from routes import agents, decisions, predictions, metrics
 
@@ -13,12 +13,25 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 manager = ConnectionManager()
-orchestrator = AgentOrchestrator()
+
+# Check if AWS credentials are configured for Bedrock
+use_bedrock = all([
+    os.getenv("AWS_ACCESS_KEY_ID"),
+    os.getenv("AWS_SECRET_ACCESS_KEY"),
+    os.getenv("AWS_DEFAULT_REGION")
+])
+
+orchestrator = StrandsAgentOrchestrator(use_bedrock=use_bedrock)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup: Start the autonomous agent system
-    logger.info("🚀 Starting Autonomous MSP AI System...")
+    # Startup
+    if use_bedrock:
+        logger.info("🚀 Starting Autonomous MSP AI System with AWS Bedrock + Strands Agents...")
+    else:
+        logger.info("🚀 Starting Autonomous MSP AI System in simulation mode...")
+        logger.info("💡 Configure AWS credentials to enable Bedrock integration")
+    
     asyncio.create_task(orchestrator.run())
     asyncio.create_task(broadcast_updates())
     yield
@@ -26,16 +39,16 @@ async def lifespan(app: FastAPI):
     logger.info("🛑 Shutting down Autonomous MSP AI System...")
 
 app = FastAPI(
-    title="MSP AI Orchestrator",
-    description="Autonomous Multi-Agent Management System powered by AWS Bedrock",
-    version="1.0.0",
+    title="MSP AI Orchestrator - Strands Agents + AWS Bedrock",
+    description="Autonomous Multi-Agent Management System powered by Strands Agents framework",
+    version="2.0.0",
     lifespan=lifespan
 )
 
 # CORS middleware for React frontend
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5000", "http://0.0.0.0:5000"],
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -51,9 +64,11 @@ app.include_router(metrics.router, prefix="/api/metrics", tags=["metrics"])
 async def root():
     return {
         "service": "MSP AI Orchestrator",
+        "framework": "Strands Agents + AWS Bedrock",
         "status": "operational",
+        "bedrock_enabled": use_bedrock,
         "agents": orchestrator.get_agent_count(),
-        "version": "1.0.0"
+        "version": "2.0.0"
     }
 
 @app.get("/api/health")
@@ -61,7 +76,18 @@ async def health():
     return {
         "status": "healthy",
         "orchestrator": orchestrator.is_running(),
-        "active_agents": orchestrator.get_active_agents_count()
+        "bedrock_enabled": use_bedrock,
+        "framework": "Strands Agents"
+    }
+
+@app.get("/api/status")
+async def get_status():
+    """Get complete system status"""
+    return {
+        "agents": orchestrator.get_agent_statuses(),
+        "recent_decisions": orchestrator.decisions_log[:10],
+        "predictions": orchestrator.get_latest_predictions(),
+        "metrics": orchestrator.get_current_metrics()
     }
 
 @app.websocket("/ws")
@@ -69,7 +95,6 @@ async def websocket_endpoint(websocket: WebSocket):
     await manager.connect(websocket)
     try:
         while True:
-            # Keep connection alive and receive any client messages
             data = await websocket.receive_text()
             logger.info(f"Received from client: {data}")
     except WebSocketDisconnect:
@@ -79,14 +104,14 @@ async def websocket_endpoint(websocket: WebSocket):
 async def broadcast_updates():
     """Broadcast real-time updates to all connected clients"""
     while True:
-        await asyncio.sleep(2)  # Send updates every 2 seconds
+        await asyncio.sleep(3)  # Send updates every 3 seconds
         
-        # Get latest data from orchestrator
         update = {
             "type": "system_update",
             "timestamp": orchestrator.get_current_time(),
             "agents": orchestrator.get_agent_statuses(),
             "recent_decision": orchestrator.get_latest_decision(),
+            "predictions": orchestrator.get_latest_predictions(3),
             "metrics": orchestrator.get_current_metrics()
         }
         
@@ -94,4 +119,4 @@ async def broadcast_updates():
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="0.0.0.0", port=8000, log_level="info")
