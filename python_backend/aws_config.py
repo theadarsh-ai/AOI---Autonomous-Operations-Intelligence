@@ -18,6 +18,7 @@ class AWSClients:
         # Get credentials from environment variables (Replit Secrets)
         self.aws_access_key_id = os.getenv('AWS_ACCESS_KEY_ID')
         self.aws_secret_access_key = os.getenv('AWS_SECRET_ACCESS_KEY')
+        self.aws_session_token = os.getenv('AWS_SESSION_TOKEN')  # For temporary credentials
         self.aws_region = os.getenv('AWS_DEFAULT_REGION', 'us-east-1')
         
         if not all([self.aws_access_key_id, self.aws_secret_access_key]):
@@ -29,7 +30,10 @@ class AWSClients:
             retries={'max_attempts': 3, 'mode': 'adaptive'}
         )
         
+        # Log credential type
+        cred_type = "Temporary (SSO)" if self.aws_session_token else "Permanent (IAM)"
         logger.info(f"✅ AWS Configuration loaded for region: {self.aws_region}")
+        logger.info(f"🔑 Credential type: {cred_type}")
         
         # Initialize clients
         self._bedrock_runtime = None
@@ -44,12 +48,15 @@ class AWSClients:
     def bedrock_runtime(self):
         """Bedrock Runtime for direct model invocation"""
         if self._bedrock_runtime is None:
-            self._bedrock_runtime = boto3.client(
-                'bedrock-runtime',
-                aws_access_key_id=self.aws_access_key_id,
-                aws_secret_access_key=self.aws_secret_access_key,
-                config=self.config
-            )
+            kwargs = {
+                'aws_access_key_id': self.aws_access_key_id,
+                'aws_secret_access_key': self.aws_secret_access_key,
+                'config': self.config
+            }
+            if self.aws_session_token:
+                kwargs['aws_session_token'] = self.aws_session_token
+            
+            self._bedrock_runtime = boto3.client('bedrock-runtime', **kwargs)
             logger.info("✅ Bedrock Runtime client initialized")
         return self._bedrock_runtime
     
@@ -57,12 +64,15 @@ class AWSClients:
     def bedrock_agent(self):
         """Bedrock Agent for agent management"""
         if self._bedrock_agent is None:
-            self._bedrock_agent = boto3.client(
-                'bedrock-agent',
-                aws_access_key_id=self.aws_access_key_id,
-                aws_secret_access_key=self.aws_secret_access_key,
-                config=self.config
-            )
+            kwargs = {
+                'aws_access_key_id': self.aws_access_key_id,
+                'aws_secret_access_key': self.aws_secret_access_key,
+                'config': self.config
+            }
+            if self.aws_session_token:
+                kwargs['aws_session_token'] = self.aws_session_token
+            
+            self._bedrock_agent = boto3.client('bedrock-agent', **kwargs)
             logger.info("✅ Bedrock Agent client initialized")
         return self._bedrock_agent
     
@@ -70,12 +80,15 @@ class AWSClients:
     def bedrock_agent_runtime(self):
         """Bedrock Agent Runtime for invoking agents"""
         if self._bedrock_agent_runtime is None:
-            self._bedrock_agent_runtime = boto3.client(
-                'bedrock-agent-runtime',
-                aws_access_key_id=self.aws_access_key_id,
-                aws_secret_access_key=self.aws_secret_access_key,
-                config=self.config
-            )
+            kwargs = {
+                'aws_access_key_id': self.aws_access_key_id,
+                'aws_secret_access_key': self.aws_secret_access_key,
+                'config': self.config
+            }
+            if self.aws_session_token:
+                kwargs['aws_session_token'] = self.aws_session_token
+            
+            self._bedrock_agent_runtime = boto3.client('bedrock-agent-runtime', **kwargs)
             logger.info("✅ Bedrock Agent Runtime client initialized")
         return self._bedrock_agent_runtime
     
@@ -83,12 +96,15 @@ class AWSClients:
     def dynamodb(self):
         """DynamoDB for operational data storage"""
         if self._dynamodb is None:
-            self._dynamodb = boto3.resource(
-                'dynamodb',
-                aws_access_key_id=self.aws_access_key_id,
-                aws_secret_access_key=self.aws_secret_access_key,
-                config=self.config
-            )
+            kwargs = {
+                'aws_access_key_id': self.aws_access_key_id,
+                'aws_secret_access_key': self.aws_secret_access_key,
+                'config': self.config
+            }
+            if self.aws_session_token:
+                kwargs['aws_session_token'] = self.aws_session_token
+            
+            self._dynamodb = boto3.resource('dynamodb', **kwargs)
             logger.info("✅ DynamoDB client initialized")
         return self._dynamodb
     
@@ -96,12 +112,15 @@ class AWSClients:
     def s3(self):
         """S3 for document and data storage"""
         if self._s3 is None:
-            self._s3 = boto3.client(
-                's3',
-                aws_access_key_id=self.aws_access_key_id,
-                aws_secret_access_key=self.aws_secret_access_key,
-                config=self.config
-            )
+            kwargs = {
+                'aws_access_key_id': self.aws_access_key_id,
+                'aws_secret_access_key': self.aws_secret_access_key,
+                'config': self.config
+            }
+            if self.aws_session_token:
+                kwargs['aws_session_token'] = self.aws_session_token
+            
+            self._s3 = boto3.client('s3', **kwargs)
             logger.info("✅ S3 client initialized")
         return self._s3
     
@@ -109,12 +128,15 @@ class AWSClients:
     def lambda_client(self):
         """Lambda for action group functions"""
         if self._lambda_client is None:
-            self._lambda_client = boto3.client(
-                'lambda',
-                aws_access_key_id=self.aws_access_key_id,
-                aws_secret_access_key=self.aws_secret_access_key,
-                config=self.config
-            )
+            kwargs = {
+                'aws_access_key_id': self.aws_access_key_id,
+                'aws_secret_access_key': self.aws_secret_access_key,
+                'config': self.config
+            }
+            if self.aws_session_token:
+                kwargs['aws_session_token'] = self.aws_session_token
+            
+            self._lambda_client = boto3.client('lambda', **kwargs)
             logger.info("✅ Lambda client initialized")
         return self._lambda_client
     
@@ -122,12 +144,15 @@ class AWSClients:
     def eventbridge(self):
         """EventBridge for event-driven workflows"""
         if self._eventbridge is None:
-            self._eventbridge = boto3.client(
-                'events',
-                aws_access_key_id=self.aws_access_key_id,
-                aws_secret_access_key=self.aws_secret_access_key,
-                config=self.config
-            )
+            kwargs = {
+                'aws_access_key_id': self.aws_access_key_id,
+                'aws_secret_access_key': self.aws_secret_access_key,
+                'config': self.config
+            }
+            if self.aws_session_token:
+                kwargs['aws_session_token'] = self.aws_session_token
+            
+            self._eventbridge = boto3.client('events', **kwargs)
             logger.info("✅ EventBridge client initialized")
         return self._eventbridge
     
