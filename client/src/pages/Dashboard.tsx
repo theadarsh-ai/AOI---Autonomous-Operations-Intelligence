@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { AgentCard } from "@/components/AgentCard";
 import { MetricCard } from "@/components/MetricCard";
 import { DecisionLogItem } from "@/components/DecisionLogItem";
@@ -18,6 +19,29 @@ import { wsManager } from "@/lib/websocket";
 export default function Dashboard() {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [isConnected, setIsConnected] = useState(false);
+
+  // Fetch live data from REST API
+  const { data: agentsData } = useQuery({
+    queryKey: ['/api/agents'],
+    refetchInterval: 5000, // Poll every 5 seconds
+  });
+
+  const { data: decisionsData } = useQuery({
+    queryKey: ['/api/decisions'],
+    refetchInterval: 5000,
+  });
+
+  const { data: predictionsData } = useQuery({
+    queryKey: ['/api/predictions'],
+    refetchInterval: 5000,
+  });
+
+  const { data: metricsData } = useQuery({
+    queryKey: ['/api/metrics'],
+    refetchInterval: 5000,
+  });
+
+  // Use live data if available, otherwise fall back to mock data
   const [agents, setAgents] = useState(MOCK_AGENTS);
   const [decisions, setDecisions] = useState(MOCK_DECISIONS);
   const [predictions, setPredictions] = useState(MOCK_PREDICTIONS);
@@ -27,6 +51,47 @@ export default function Dashboard() {
     predictionAccuracy: 89,
     activeIncidents: 3
   });
+
+  // Update state when API data arrives
+  useEffect(() => {
+    if (agentsData) {
+      const mappedAgents = agentsData.map((agent: any) => ({
+        id: agent.id,
+        name: agent.name,
+        icon: MOCK_AGENTS.find(a => a.name === agent.name)?.icon || MOCK_AGENTS[0].icon,
+        color: MOCK_AGENTS.find(a => a.name === agent.name)?.color || MOCK_AGENTS[0].color,
+        status: agent.status,
+        activeTasks: agent.active_tasks || agent.decisions_made || 0,
+        uptime: agent.uptime_percent || 99.9,
+        decisionsPerHour: agent.decisions_per_hour || 0,
+        accuracy: agent.accuracy_percent || agent.prediction_accuracy || 90,
+      }));
+      setAgents(mappedAgents);
+    }
+  }, [agentsData]);
+
+  useEffect(() => {
+    if (decisionsData?.recent_decisions) {
+      setDecisions(decisionsData.recent_decisions.slice(0, 10));
+    }
+  }, [decisionsData]);
+
+  useEffect(() => {
+    if (predictionsData?.predictions) {
+      setPredictions(predictionsData.predictions);
+    }
+  }, [predictionsData]);
+
+  useEffect(() => {
+    if (metricsData) {
+      setMetrics({
+        autonomousActions: metricsData.autonomous_approval_rate || metricsData.autonomous_percentage || 95,
+        preventionSavings: metricsData.monthly_savings_usd || metricsData.prevention_savings || 128000,
+        predictionAccuracy: metricsData.prediction_accuracy || 89,
+        activeIncidents: metricsData.active_incidents || 3,
+      });
+    }
+  }, [metricsData]);
 
   useEffect(() => {
     const interval = setInterval(() => {

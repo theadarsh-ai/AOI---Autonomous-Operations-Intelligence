@@ -2,6 +2,7 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { spawn } from "child_process";
+import http from "http";
 
 const app = express();
 
@@ -71,27 +72,53 @@ app.use(express.json({
 app.use(express.urlencoded({ extended: false }));
 
 // Proxy REST API requests to Python backend on port 8000
-app.use('/api', async (req, res, next) => {
-  try {
-    // req.url is relative to /api mount point, so prepend /api for Python backend
-    const url = `http://localhost:8000/api${req.url}`;
-    log(`[API Proxy] ${req.method} ${url}`);
-    
-    const response = await fetch(url, {
-      method: req.method,
-      headers: {
-        'Content-Type': 'application/json',
-        ...(req.headers as Record<string, string>),
-      },
-      body: req.method !== 'GET' && req.method !== 'HEAD' ? JSON.stringify(req.body) : undefined,
-    });
-
-    const data = await response.json();
-    res.status(response.status).json(data);
-  } catch (error) {
-    console.error('[API Proxy] Error:', error);
-    next(error);
+app.use('/api', (req, res, next) => {
+  // Add trailing slash if not present (FastAPI expects trailing slashes)
+  let url = req.url;
+  if (!url.includes('?') && !url.endsWith('/')) {
+    url += '/';
   }
+  const path = `/api${url}`;
+  log(`[API Proxy] ${req.method} ${path}`);
+  
+  const options = {
+    hostname: 'localhost',
+    port: 8000,
+    path: path,
+    method: req.method,
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  };
+
+  const proxyReq = http.request(options, (proxyRes) => {
+    let data = '';
+    
+    proxyRes.on('data', (chunk) => {
+      data += chunk;
+    });
+    
+    proxyRes.on('end', () => {
+      try {
+        const jsonData = JSON.parse(data);
+        res.status(proxyRes.statusCode || 200).json(jsonData);
+      } catch (error) {
+        console.error('[API Proxy] JSON parse error:', error);
+        res.status(500).json({ error: 'Failed to parse backend response' });
+      }
+    });
+  });
+
+  proxyReq.on('error', (error) => {
+    console.error('[API Proxy] Request error:', error);
+    res.status(500).json({ error: 'Backend connection failed' });
+  });
+
+  if (req.method !== 'GET' && req.method !== 'HEAD' && req.body) {
+    proxyReq.write(JSON.stringify(req.body));
+  }
+
+  proxyReq.end();
 });
 
 app.use((req, res, next) => {
