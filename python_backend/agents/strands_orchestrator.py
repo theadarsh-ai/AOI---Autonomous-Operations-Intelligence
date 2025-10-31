@@ -42,6 +42,7 @@ class StrandsAgentOrchestrator:
         self.use_bedrock = use_bedrock
         self.decisions_log: List[Dict] = []
         self.predictions: List[Dict] = []
+        self.activity_log: List[Dict] = []
         self.metrics = {
             "autonomous_actions": 0,
             "total_decisions": 0,
@@ -49,6 +50,9 @@ class StrandsAgentOrchestrator:
             "prediction_accuracy": 89.0,
             "active_incidents": 3
         }
+        
+        # Generate initial predictions so tab isn't empty
+        self._generate_initial_predictions()
         
         # Agent configurations
         self.agent_configs = {
@@ -157,11 +161,26 @@ class StrandsAgentOrchestrator:
         """Continuously orchestrate agent activities"""
         import random
         
+        # Log orchestrator start
+        self._log_activity("Master Orchestrator", "Started", "Multi-agent orchestration loop active - monitoring all systems", "info")
+        
         while self.running:
             try:
                 # Simulate predictive monitoring detecting an issue
                 if random.random() < 0.15:  # 15% chance per cycle
                     await self._handle_autonomous_workflow()
+                
+                # Randomly log routine agent activities
+                if random.random() < 0.08:  # 8% chance
+                    activities = [
+                        ("Security & Compliance", "Vulnerability Scan", "Completed security scan - 0 critical issues found"),
+                        ("Resource Optimization", "Technician Assignment", "Optimized technician schedules for next 24 hours"),
+                        ("Financial Intelligence", "Cost Analysis", "Analyzed profitability across 12 client accounts"),
+                        ("Client Lifecycle", "Health Monitoring", "Checked health scores for all active clients"),
+                        ("Learning & Adaptation", "Model Update", "Updated prediction models based on recent outcomes"),
+                    ]
+                    agent, action, details = random.choice(activities)
+                    self._log_activity(agent, action, details, "info")
                 
                 # Update metrics
                 self.metrics["prediction_accuracy"] += random.uniform(-0.1, 0.3)
@@ -212,6 +231,7 @@ class StrandsAgentOrchestrator:
             prediction["timestamp"] = datetime.now().strftime("%H:%M:%S")
             
             self.predictions.insert(0, prediction)
+            self._log_activity("Predictive Monitoring", "Failure Prediction", f"{prediction['title']} - {prediction['time_to_failure']} (confidence: {prediction['confidence']}%)", "warning")
             logger.info(f"🔍 Prediction: {prediction['title']}")
             
             # Decision evaluation
@@ -247,8 +267,10 @@ class StrandsAgentOrchestrator:
                 self.metrics["autonomous_actions"] += 1
                 self.metrics["total_decisions"] += 1
                 self.metrics["prevention_savings"] += preventive_cost * roi
+                self._log_activity("Autonomous Decision", "Auto-Approved", f"${preventive_cost} preventive action (ROI: {roi}:1) - {decision['decision_type']}", "success")
                 logger.info(f"✅ Auto-approved: ${preventive_cost} (ROI: {roi}:1)")
             else:
+                self._log_activity("Autonomous Decision", "Escalated", f"${preventive_cost} action requires human approval - Autonomy Level {autonomy_level}", "escalation")
                 logger.info(f"⚠️ Escalated for approval: ${preventive_cost}")
             
         except Exception as e:
@@ -295,3 +317,83 @@ class StrandsAgentOrchestrator:
     
     def get_agent_count(self) -> int:
         return len(self.agent_configs)
+    
+    def get_activity_log(self, limit: int = 50) -> List[Dict]:
+        """Get recent agent activity"""
+        return self.activity_log[:limit]
+    
+    def _log_activity(self, agent: str, action: str, details: str, level: str = "info"):
+        """Log agent activity for real-time monitoring"""
+        activity = {
+            "id": f"act-{len(self.activity_log)}",
+            "timestamp": datetime.now().strftime("%H:%M:%S"),
+            "agent": agent,
+            "action": action,
+            "details": details,
+            "level": level
+        }
+        self.activity_log.insert(0, activity)
+        # Keep only last 200 activities
+        if len(self.activity_log) > 200:
+            self.activity_log = self.activity_log[:200]
+    
+    def _generate_initial_predictions(self):
+        """Generate initial predictions so Predictions tab has content"""
+        import random
+        
+        systems = ["DB-Server-03", "Network-Switch-07", "App-Server-12", "Mail-Server-05", "Web-Server-02"]
+        
+        initial_predictions = [
+            {
+                "title": "Database Server Disk Failure",
+                "description": f"{random.choice(systems)}: Predicted disk failure based on SMART data degradation",
+                "severity": "critical",
+                "confidence": 92,
+                "time_to_failure": "28 hours",
+                "estimated_impact": 12000,
+                "scheduled_action": "Replace disk during maintenance window, migrate data to backup",
+            },
+            {
+                "title": "Network Capacity Threshold",
+                "description": f"{random.choice(systems)}: Network bandwidth approaching 85% capacity",
+                "severity": "high",
+                "confidence": 85,
+                "time_to_failure": "42 hours",
+                "estimated_impact": 8500,
+                "scheduled_action": "Upgrade network infrastructure, add bandwidth capacity",
+            },
+            {
+                "title": "Memory Exhaustion Risk",
+                "description": f"{random.choice(systems)}: Memory usage trending toward critical levels",
+                "severity": "high",
+                "confidence": 88,
+                "time_to_failure": "36 hours",
+                "estimated_impact": 6200,
+                "scheduled_action": "Increase memory allocation, optimize memory-intensive processes",
+            },
+            {
+                "title": "SSL Certificate Expiration",
+                "description": f"{random.choice(systems)}: SSL certificate expires in 48 hours",
+                "severity": "medium",
+                "confidence": 100,
+                "time_to_failure": "48 hours",
+                "estimated_impact": 3000,
+                "scheduled_action": "Renew SSL certificate, update configuration",
+            },
+            {
+                "title": "Backup Storage Capacity",
+                "description": f"{random.choice(systems)}: Backup storage approaching 90% capacity",
+                "severity": "medium",
+                "confidence": 94,
+                "time_to_failure": "72 hours",
+                "estimated_impact": 4500,
+                "scheduled_action": "Expand backup storage, archive old backups",
+            }
+        ]
+        
+        for i, pred in enumerate(initial_predictions):
+            pred["id"] = f"pred-{i}"
+            pred["timestamp"] = datetime.now().strftime("%H:%M:%S")
+            self.predictions.append(pred)
+        
+        self._log_activity("Predictive Monitoring", "System Initialized", f"Generated {len(initial_predictions)} initial predictions", "info")

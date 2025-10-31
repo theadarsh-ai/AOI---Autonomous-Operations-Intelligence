@@ -7,7 +7,7 @@ import logging
 import json
 
 from agents.websocket_manager import ConnectionManager
-from routes import agents, decisions, predictions, metrics
+from routes import agents, decisions, predictions, metrics, activity
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -121,6 +121,7 @@ app.include_router(agents.router, prefix="/api/agents", tags=["agents"])
 app.include_router(decisions.router, prefix="/api/decisions", tags=["decisions"])
 app.include_router(predictions.router, prefix="/api/predictions", tags=["predictions"])
 app.include_router(metrics.router, prefix="/api/metrics", tags=["metrics"])
+app.include_router(activity.router, prefix="/api/activity", tags=["activity"])
 
 @app.get("/")
 async def root():

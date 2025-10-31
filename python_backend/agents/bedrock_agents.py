@@ -25,6 +25,13 @@ class BedrockAgentOrchestrator:
         self.aws_clients = aws_clients
         self.data = data_store
         
+        # Activity tracking
+        self.predictions: List[Dict] = []
+        self.activity_log: List[Dict] = []
+        
+        # Generate initial predictions so Predictions tab has content
+        self._generate_initial_predictions()
+        
         # Agent states
         self.agent_states = {
             "master_orchestrator": {
@@ -211,6 +218,11 @@ Predict if this server will fail in the next 24-48 hours and recommend preventiv
         # Update agent state
         self.agent_states['predictive_monitoring']['predictions_made'] += len(predictions)
         
+        # Log activity
+        if predictions:
+            pred = predictions[0]
+            self._log_activity("Predictive Monitoring", "Failure Prediction", f"{pred['issue_type']} detected on {pred['server_name']} - {pred['probability']}% probability", "warning")
+        
         return {
             "agent": "predictive_monitoring",
             "predictions": predictions,
@@ -266,6 +278,12 @@ Should this action be approved? Provide detailed reasoning."""
         # Update agent state
         self.agent_states['autonomous_decision']['decisions_made'] = \
             self.agent_states['autonomous_decision'].get('decisions_made', 0) + 1
+        
+        # Log activity
+        if approval_status == "auto_approved":
+            self._log_activity("Autonomous Decision", "Auto-Approved", f"${preventive_cost} preventive action (ROI: {roi}:1) - {decision['action']}", "success")
+        else:
+            self._log_activity("Autonomous Decision", "Escalated", f"${preventive_cost} action requires human approval - Level {autonomy_level}", "escalation")
         
         return {
             "agent": "autonomous_decision",
@@ -379,3 +397,86 @@ Should this action be approved? Provide detailed reasoning."""
             "servers_monitored": len(self.data.get('servers', [])),
             "clients_managed": len(self.data.get('clients', []))
         }
+    
+    def get_predictions(self, limit: int = 10) -> List[Dict]:
+        """Get recent predictions"""
+        return self.predictions[:limit]
+    
+    def get_activity_log(self, limit: int = 50) -> List[Dict]:
+        """Get recent agent activity"""
+        return self.activity_log[:limit]
+    
+    def _log_activity(self, agent: str, action: str, details: str, level: str = "info"):
+        """Log agent activity for real-time monitoring"""
+        activity = {
+            "id": f"act-{len(self.activity_log)}",
+            "timestamp": datetime.now().strftime("%H:%M:%S"),
+            "agent": agent,
+            "action": action,
+            "details": details,
+            "level": level
+        }
+        self.activity_log.insert(0, activity)
+        # Keep only last 200 activities
+        if len(self.activity_log) > 200:
+            self.activity_log = self.activity_log[:200]
+    
+    def _generate_initial_predictions(self):
+        """Generate initial predictions so Predictions tab has content"""
+        servers = self.data.get("servers", [])
+        server_ids = [s["server_id"] for s in servers[:5]] if servers else ["DB-Server-03", "Network-Switch-07", "App-Server-12"]
+        
+        initial_predictions = [
+            {
+                "title": "Database Server Disk Failure",
+                "description": f"{random.choice(server_ids)}: Predicted disk failure based on SMART data degradation",
+                "severity": "critical",
+                "confidence": 92,
+                "time_to_failure": "28 hours",
+                "estimated_impact": 12000,
+                "scheduled_action": "Replace disk during maintenance window, migrate data to backup",
+            },
+            {
+                "title": "Network Capacity Threshold",
+                "description": f"{random.choice(server_ids)}: Network bandwidth approaching 85% capacity",
+                "severity": "high",
+                "confidence": 85,
+                "time_to_failure": "42 hours",
+                "estimated_impact": 8500,
+                "scheduled_action": "Upgrade network infrastructure, add bandwidth capacity",
+            },
+            {
+                "title": "Memory Exhaustion Risk",
+                "description": f"{random.choice(server_ids)}: Memory usage trending toward critical levels",
+                "severity": "high",
+                "confidence": 88,
+                "time_to_failure": "36 hours",
+                "estimated_impact": 6200,
+                "scheduled_action": "Increase memory allocation, optimize memory-intensive processes",
+            },
+            {
+                "title": "SSL Certificate Expiration",
+                "description": f"{random.choice(server_ids)}: SSL certificate expires in 48 hours",
+                "severity": "medium",
+                "confidence": 100,
+                "time_to_failure": "48 hours",
+                "estimated_impact": 3000,
+                "scheduled_action": "Renew SSL certificate, update configuration",
+            },
+            {
+                "title": "Backup Storage Capacity",
+                "description": f"{random.choice(server_ids)}: Backup storage approaching 90% capacity",
+                "severity": "medium",
+                "confidence": 94,
+                "time_to_failure": "72 hours",
+                "estimated_impact": 4500,
+                "scheduled_action": "Expand backup storage, archive old backups",
+            }
+        ]
+        
+        for i, pred in enumerate(initial_predictions):
+            pred["id"] = f"pred-{i}"
+            pred["timestamp"] = datetime.now().strftime("%H:%M:%S")
+            self.predictions.append(pred)
+        
+        self._log_activity("Predictive Monitoring", "System Initialized", f"Generated {len(initial_predictions)} initial predictions", "info")

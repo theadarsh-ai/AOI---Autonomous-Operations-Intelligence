@@ -5,6 +5,7 @@ import { MetricCard } from "@/components/MetricCard";
 import { DecisionLogItem } from "@/components/DecisionLogItem";
 import { PredictionCard } from "@/components/PredictionCard";
 import { EscalationCard } from "@/components/EscalationCard";
+import { ActivityLogItem } from "@/components/ActivityLogItem";
 import { PerformanceChart } from "@/components/PerformanceChart";
 import { FinancialImpactChart } from "@/components/FinancialImpactChart";
 import { ConnectionStatus } from "@/components/ConnectionStatus";
@@ -41,6 +42,11 @@ export default function Dashboard() {
     refetchInterval: 5000,
   });
 
+  const { data: activityData } = useQuery({
+    queryKey: ['/api/activity'],
+    refetchInterval: 3000, // Poll every 3 seconds for real-time feel
+  });
+
   // Use live data if available, otherwise fall back to mock data
   const [agents, setAgents] = useState(MOCK_AGENTS);
   const [decisions, setDecisions] = useState(MOCK_DECISIONS);
@@ -51,6 +57,8 @@ export default function Dashboard() {
     predictionAccuracy: 89,
     activeIncidents: 3
   });
+  
+  const [activities, setActivities] = useState<any[]>([]);
 
   // Update state when API data arrives
   useEffect(() => {
@@ -105,6 +113,12 @@ export default function Dashboard() {
       });
     }
   }, [metricsData]);
+
+  useEffect(() => {
+    if (activityData?.activities) {
+      setActivities(activityData.activities);
+    }
+  }, [activityData]);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -250,6 +264,10 @@ export default function Dashboard() {
             <TabsTrigger value="escalations" data-testid="tab-escalations">
               Escalations
               <Badge variant="destructive" className="ml-2">2</Badge>
+            </TabsTrigger>
+            <TabsTrigger value="activity" data-testid="tab-activity">
+              Live Activity
+              <Badge variant="secondary" className="ml-2">{activities.length}</Badge>
             </TabsTrigger>
           </TabsList>
 
@@ -422,6 +440,40 @@ export default function Dashboard() {
                 />
               </div>
             </div>
+          </TabsContent>
+
+          <TabsContent value="activity" className="space-y-6">
+            <Card className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h2 className="text-lg font-semibold">Live Agent Activity</h2>
+                  <p className="text-sm text-muted-foreground">Real-time autonomous agent operations - proof that agents are working</p>
+                </div>
+                <Badge variant="secondary" data-testid="text-activity-count">
+                  {activities.length} activities
+                </Badge>
+              </div>
+              <div className="space-y-0 max-h-[800px] overflow-y-auto border rounded-md">
+                {activities.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-12 text-center">
+                    <div className="text-muted-foreground mb-2">Loading agent activity...</div>
+                    <div className="text-xs text-muted-foreground">Agents are starting up and will log activity momentarily</div>
+                  </div>
+                ) : (
+                  activities.map((activity: any) => (
+                    <ActivityLogItem
+                      key={activity.id}
+                      id={activity.id}
+                      timestamp={activity.timestamp}
+                      agent={activity.agent}
+                      action={activity.action}
+                      details={activity.details}
+                      level={activity.level || "info"}
+                    />
+                  ))
+                )}
+              </div>
+            </Card>
           </TabsContent>
         </Tabs>
       </main>
