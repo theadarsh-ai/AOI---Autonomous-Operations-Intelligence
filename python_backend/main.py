@@ -88,6 +88,10 @@ async def lifespan(app: FastAPI):
         from agents.strands_orchestrator import StrandsAgentOrchestrator
         orchestrator = StrandsAgentOrchestrator(use_bedrock=False)
     
+    # Make orchestrator available to routes via app state
+    app.state.orchestrator = orchestrator
+    app.state.use_bedrock = use_bedrock
+    
     # Start background tasks
     asyncio.create_task(run_autonomous_workflows())
     asyncio.create_task(broadcast_updates())
