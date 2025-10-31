@@ -291,7 +291,13 @@ export default function Dashboard() {
                   <h2 className="text-lg font-semibold mb-4">Active Agents</h2>
                   <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
                     {agents.map((agent) => (
-                      <AgentCard key={agent.id} {...agent} />
+                      <AgentCard 
+                        key={agent.id} 
+                        {...agent} 
+                        onViewDetails={() => {
+                          alert(`Agent: ${agent.name}\n\nStatus: ${agent.status}\nActive Tasks: ${agent.activeTasks}\nUptime: ${agent.uptime}%\nDecisions/Hour: ${agent.decisionsPerHour}\nAccuracy: ${agent.accuracy}%\n\nRecent Activity:\n${agent.recentActivity}`);
+                        }}
+                      />
                     ))}
                   </div>
                 </div>
@@ -324,7 +330,13 @@ export default function Dashboard() {
               <h2 className="text-lg font-semibold mb-4">All Agents Status</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
                 {agents.map((agent) => (
-                  <AgentCard key={agent.id} {...agent} />
+                  <AgentCard 
+                    key={agent.id} 
+                    {...agent} 
+                    onViewDetails={() => {
+                      alert(`Agent: ${agent.name}\n\nStatus: ${agent.status}\nActive Tasks: ${agent.activeTasks}\nUptime: ${agent.uptime}%\nDecisions/Hour: ${agent.decisionsPerHour}\nAccuracy: ${agent.accuracy}%\n\nRecent Activity:\n${agent.recentActivity}`);
+                    }}
+                  />
                 ))}
               </div>
             </div>
