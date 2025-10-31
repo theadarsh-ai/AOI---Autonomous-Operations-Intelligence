@@ -1,0 +1,243 @@
+import { useState, useEffect } from "react";
+import { AgentCard } from "@/components/AgentCard";
+import { MetricCard } from "@/components/MetricCard";
+import { DecisionLogItem } from "@/components/DecisionLogItem";
+import { PredictionCard } from "@/components/PredictionCard";
+import { EscalationCard } from "@/components/EscalationCard";
+import { PerformanceChart } from "@/components/PerformanceChart";
+import { FinancialImpactChart } from "@/components/FinancialImpactChart";
+import { ConnectionStatus } from "@/components/ConnectionStatus";
+import { ThemeToggle } from "@/components/ThemeToggle";
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Target, TrendingUp, AlertTriangle, DollarSign } from "lucide-react";
+import { AGENTS, RECENT_DECISIONS, PREDICTIONS } from "@/lib/mockData";
+
+export default function Dashboard() {
+  const [currentTime, setCurrentTime] = useState(new Date());
+  const [isConnected] = useState(true);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const performanceData = [
+    { time: '6h ago', accuracy: 82, falsePositives: 15 },
+    { time: '5h ago', accuracy: 84, falsePositives: 14 },
+    { time: '4h ago', accuracy: 85, falsePositives: 12 },
+    { time: '3h ago', accuracy: 86, falsePositives: 11 },
+    { time: '2h ago', accuracy: 87, falsePositives: 9 },
+    { time: '1h ago', accuracy: 88, falsePositives: 8 },
+    { time: 'Now', accuracy: 89, falsePositives: 7 },
+  ];
+
+  const financialData = [
+    { agent: 'Monitor', savings: 45000, cost: 3200, roi: 14 },
+    { agent: 'Decision', savings: 38000, cost: 2800, roi: 13 },
+    { agent: 'Resource', savings: 28000, cost: 2400, roi: 11 },
+    { agent: 'Security', savings: 52000, cost: 4200, roi: 12 },
+    { agent: 'Financial', savings: 34000, cost: 2600, roi: 13 },
+    { agent: 'Lifecycle', savings: 22000, cost: 2000, roi: 11 },
+  ];
+
+  return (
+    <div className="min-h-screen bg-background">
+      <header className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <div className="flex h-16 items-center justify-between px-6 max-w-[1920px] mx-auto">
+          <div className="flex items-center gap-4">
+            <div>
+              <h1 className="text-xl font-semibold">MSP AI Orchestrator</h1>
+              <p className="text-xs text-muted-foreground">Autonomous Multi-Agent System</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-4">
+            <ConnectionStatus isConnected={isConnected} lastUpdate="2s ago" />
+            <div className="text-xs font-mono text-muted-foreground">
+              {currentTime.toLocaleTimeString()}
+            </div>
+            <ThemeToggle />
+          </div>
+        </div>
+      </header>
+
+      <main className="p-6 max-w-[1920px] mx-auto">
+        <Tabs defaultValue="overview" className="space-y-6">
+          <TabsList data-testid="tabs-main-navigation">
+            <TabsTrigger value="overview" data-testid="tab-overview">Overview</TabsTrigger>
+            <TabsTrigger value="agents" data-testid="tab-agents">Agents</TabsTrigger>
+            <TabsTrigger value="predictions" data-testid="tab-predictions">Predictions</TabsTrigger>
+            <TabsTrigger value="decisions" data-testid="tab-decisions">Decisions</TabsTrigger>
+            <TabsTrigger value="analytics" data-testid="tab-analytics">Analytics</TabsTrigger>
+            <TabsTrigger value="escalations" data-testid="tab-escalations">
+              Escalations
+              <Badge variant="destructive" className="ml-2">2</Badge>
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="overview" className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <MetricCard
+                label="Autonomous Actions"
+                value="95%"
+                icon={Target}
+                trend={{ value: 2.3, isPositive: true }}
+                testId="metric-autonomous-actions"
+              />
+              <MetricCard
+                label="Prevention Savings"
+                value="$128K"
+                icon={DollarSign}
+                trend={{ value: 12, isPositive: true }}
+                testId="metric-prevention-savings"
+              />
+              <MetricCard
+                label="Prediction Accuracy"
+                value="89%"
+                icon={TrendingUp}
+                trend={{ value: 2.1, isPositive: true }}
+                testId="metric-prediction-accuracy"
+              />
+              <MetricCard
+                label="Active Incidents"
+                value="3"
+                icon={AlertTriangle}
+                trend={{ value: 40, isPositive: false }}
+                testId="metric-active-incidents"
+              />
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <div className="lg:col-span-2 space-y-6">
+                <div>
+                  <h2 className="text-lg font-semibold mb-4">Active Agents</h2>
+                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+                    {AGENTS.map((agent) => (
+                      <AgentCard key={agent.id} {...agent} />
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <h2 className="text-lg font-semibold mb-4">Upcoming Predictions</h2>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {PREDICTIONS.slice(0, 2).map((prediction) => (
+                      <PredictionCard key={prediction.id} {...prediction} />
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <Card className="p-4">
+                  <h2 className="text-sm font-semibold mb-4">Live Decision Feed</h2>
+                  <div className="space-y-0 max-h-[800px] overflow-y-auto">
+                    {RECENT_DECISIONS.map((decision) => (
+                      <DecisionLogItem key={decision.id} {...decision} />
+                    ))}
+                  </div>
+                </Card>
+              </div>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="agents" className="space-y-6">
+            <div>
+              <h2 className="text-lg font-semibold mb-4">All Agents Status</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+                {AGENTS.map((agent) => (
+                  <AgentCard key={agent.id} {...agent} />
+                ))}
+              </div>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="predictions" className="space-y-6">
+            <div>
+              <h2 className="text-lg font-semibold mb-4">Predictive Timeline - Next 72 Hours</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {PREDICTIONS.map((prediction) => (
+                  <PredictionCard key={prediction.id} {...prediction} />
+                ))}
+              </div>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="decisions" className="space-y-6">
+            <Card className="p-6">
+              <h2 className="text-lg font-semibold mb-4">Autonomous Decision Log</h2>
+              <div className="space-y-0">
+                {RECENT_DECISIONS.map((decision) => (
+                  <DecisionLogItem key={decision.id} {...decision} />
+                ))}
+              </div>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="analytics" className="space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <PerformanceChart
+                title="Learning Performance - Last 6 Hours"
+                data={performanceData}
+                dataKeys={[
+                  { key: 'accuracy', label: 'Prediction Accuracy (%)', color: 'hsl(var(--chart-1))' },
+                  { key: 'falsePositives', label: 'False Positive Rate (%)', color: 'hsl(var(--chart-5))' },
+                ]}
+              />
+              <FinancialImpactChart
+                title="ROI by Agent - Last 30 Days"
+                data={financialData}
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <MetricCard label="Avg Decision Time" value="4.2s" />
+              <MetricCard label="Success Rate" value="92%" trend={{ value: 1.5, isPositive: true }} />
+              <MetricCard label="Cost Avoidance" value="$428K" trend={{ value: 18, isPositive: true }} />
+              <MetricCard label="Model Updates" value="147" />
+            </div>
+          </TabsContent>
+
+          <TabsContent value="escalations" className="space-y-6">
+            <div>
+              <h2 className="text-lg font-semibold mb-4">Pending Escalations - Requires Human Approval</h2>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <EscalationCard
+                  id="esc-1"
+                  decisionType="Major Infrastructure Upgrade"
+                  timestamp="15:42:18"
+                  urgencyLevel="high"
+                  whyEscalated="Cost exceeds $10K threshold for autonomous approval"
+                  riskAssessment="Medium risk - requires brief downtime during migration. Failure scenario includes potential 2-hour service disruption."
+                  businessImpact="Upgrading database cluster will improve performance by 40% and prevent predicted capacity issues in Q2."
+                  actionPreview="Migrate 3 production databases to new AWS RDS instances with enhanced IOPS and automated backups"
+                  estimatedCost={15000}
+                  onApprove={() => console.log('Approved infrastructure upgrade')}
+                  onReject={() => console.log('Rejected infrastructure upgrade')}
+                  onRequestInfo={() => console.log('Requested more info')}
+                />
+                <EscalationCard
+                  id="esc-2"
+                  decisionType="Custom Client Contract Negotiation"
+                  timestamp="14:28:55"
+                  urgencyLevel="medium"
+                  whyEscalated="Contract terms outside standard parameters - requires custom pricing structure"
+                  riskAssessment="Low risk - client has strong credit history and existing relationship. Non-standard SLA requirements."
+                  businessImpact="High-value enterprise client (projected $180K annual revenue). Custom terms could set precedent for similar deals."
+                  actionPreview="Approve custom 99.99% uptime SLA with dedicated support team and 15-minute response time guarantee"
+                  estimatedCost={8500}
+                  onApprove={() => console.log('Approved contract terms')}
+                  onReject={() => console.log('Rejected contract terms')}
+                  onRequestInfo={() => console.log('Requested more info')}
+                />
+              </div>
+            </div>
+          </TabsContent>
+        </Tabs>
+      </main>
+    </div>
+  );
+}
