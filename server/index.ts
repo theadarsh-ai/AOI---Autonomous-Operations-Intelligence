@@ -73,7 +73,10 @@ app.use(express.urlencoded({ extended: false }));
 // Proxy REST API requests to Python backend on port 8000
 app.use('/api', async (req, res, next) => {
   try {
-    const url = `http://localhost:8000${req.url}`;
+    // req.url is relative to /api mount point, so prepend /api for Python backend
+    const url = `http://localhost:8000/api${req.url}`;
+    log(`[API Proxy] ${req.method} ${url}`);
+    
     const response = await fetch(url, {
       method: req.method,
       headers: {
