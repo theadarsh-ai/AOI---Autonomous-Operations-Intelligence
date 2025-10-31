@@ -62,6 +62,24 @@ export default function Dashboard() {
           setAgents(updatedAgents);
         }
 
+        // Update predictions if provided
+        if (message.predictions && message.predictions.length > 0) {
+          const updatedPredictions = message.predictions.map((p: any) => ({
+            id: p.id,
+            agentName: p.agent_name,
+            agentIcon: MOCK_PREDICTIONS[0].agentIcon,
+            agentColor: MOCK_PREDICTIONS[0].agentColor,
+            type: p.type as 'outage' | 'performance' | 'cost' | 'security',
+            description: p.description,
+            probability: p.probability,
+            timeframe: p.timeframe,
+            impact: p.impact,
+            preventiveCost: p.preventive_cost,
+            failureCost: p.failure_cost
+          }));
+          setPredictions(updatedPredictions);
+        }
+
         // Update recent decision if provided
         if (message.recent_decision) {
           const newDecision = {
@@ -80,14 +98,14 @@ export default function Dashboard() {
           setDecisions((prev) => [newDecision, ...prev.slice(0, 9)]);
         }
 
-        // Update metrics if provided
+        // Update metrics if provided - use functional update to avoid stale closures
         if (message.metrics) {
-          setMetrics({
-            autonomousActions: message.metrics.autonomous_percentage || metrics.autonomousActions,
-            preventionSavings: message.metrics.prevention_savings || metrics.preventionSavings,
-            predictionAccuracy: message.metrics.prediction_accuracy || metrics.predictionAccuracy,
-            activeIncidents: message.metrics.active_incidents || metrics.activeIncidents
-          });
+          setMetrics((prev) => ({
+            autonomousActions: message.metrics.autonomous_percentage ?? prev.autonomousActions,
+            preventionSavings: message.metrics.prevention_savings ?? prev.preventionSavings,
+            predictionAccuracy: message.metrics.prediction_accuracy ?? prev.predictionAccuracy,
+            activeIncidents: message.metrics.active_incidents ?? prev.activeIncidents
+          }));
         }
       }
     });
