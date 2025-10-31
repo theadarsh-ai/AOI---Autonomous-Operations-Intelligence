@@ -12,17 +12,95 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Target, TrendingUp, AlertTriangle, DollarSign } from "lucide-react";
-import { AGENTS, RECENT_DECISIONS, PREDICTIONS } from "@/lib/mockData";
+import { AGENTS as MOCK_AGENTS, RECENT_DECISIONS as MOCK_DECISIONS, PREDICTIONS as MOCK_PREDICTIONS } from "@/lib/mockData";
+import { wsManager } from "@/lib/websocket";
 
 export default function Dashboard() {
   const [currentTime, setCurrentTime] = useState(new Date());
-  const [isConnected] = useState(true);
+  const [isConnected, setIsConnected] = useState(false);
+  const [agents, setAgents] = useState(MOCK_AGENTS);
+  const [decisions, setDecisions] = useState(MOCK_DECISIONS);
+  const [predictions, setPredictions] = useState(MOCK_PREDICTIONS);
+  const [metrics, setMetrics] = useState({
+    autonomousActions: 95,
+    preventionSavings: 128000,
+    predictionAccuracy: 89,
+    activeIncidents: 3
+  });
 
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentTime(new Date());
     }, 1000);
     return () => clearInterval(interval);
+  }, []);
+
+  // WebSocket connection for real-time updates from Python backend
+  useEffect(() => {
+    setIsConnected(wsManager.isConnected());
+
+    const unsubscribe = wsManager.subscribe((message) => {
+      console.log("Received WebSocket message:", message);
+      
+      if (message.type === "system_update") {
+        // Update agents if provided
+        if (message.agents && message.agents.length > 0) {
+          const updatedAgents = MOCK_AGENTS.map((mockAgent) => {
+            const liveAgent = message.agents?.find((a: any) => a.id === mockAgent.id);
+            if (liveAgent) {
+              return {
+                ...mockAgent,
+                status: liveAgent.status as any,
+                activeTasks: liveAgent.active_tasks || mockAgent.activeTasks,
+                uptime: liveAgent.uptime || mockAgent.uptime,
+                decisionsPerHour: liveAgent.decisions_per_hour || mockAgent.decisionsPerHour,
+                accuracy: liveAgent.accuracy || mockAgent.accuracy
+              };
+            }
+            return mockAgent;
+          });
+          setAgents(updatedAgents);
+        }
+
+        // Update recent decision if provided
+        if (message.recent_decision) {
+          const newDecision = {
+            id: message.recent_decision.id,
+            timestamp: message.recent_decision.timestamp,
+            agentName: message.recent_decision.agent_name,
+            agentIcon: MOCK_DECISIONS[0].agentIcon,
+            agentColor: MOCK_DECISIONS[0].agentColor,
+            decisionType: message.recent_decision.decision_type,
+            description: message.recent_decision.description,
+            cost: message.recent_decision.cost,
+            roi: message.recent_decision.roi,
+            autonomyLevel: message.recent_decision.autonomy_level as 1 | 2 | 3,
+            autoApproved: message.recent_decision.auto_approved
+          };
+          setDecisions((prev) => [newDecision, ...prev.slice(0, 9)]);
+        }
+
+        // Update metrics if provided
+        if (message.metrics) {
+          setMetrics({
+            autonomousActions: message.metrics.autonomous_percentage || metrics.autonomousActions,
+            preventionSavings: message.metrics.prevention_savings || metrics.preventionSavings,
+            predictionAccuracy: message.metrics.prediction_accuracy || metrics.predictionAccuracy,
+            activeIncidents: message.metrics.active_incidents || metrics.activeIncidents
+          });
+        }
+      }
+    });
+
+    // Check connection status periodically
+    const connectionCheck = setInterval(() => {
+      setIsConnected(wsManager.isConnected());
+    }, 1000);
+
+    return () => {
+      unsubscribe();
+      clearInterval(connectionCheck);
+    };
   }, []);
 
   const performanceData = [
@@ -55,7 +133,10 @@ export default function Dashboard() {
             </div>
           </div>
           <div className="flex items-center gap-4">
-            <ConnectionStatus isConnected={isConnected} lastUpdate="2s ago" />
+            <ConnectionStatus 
+              isConnected={isConnected} 
+              lastUpdate={isConnected ? "live" : undefined}
+            />
             <div className="text-xs font-mono text-muted-foreground">
               {currentTime.toLocaleTimeString()}
             </div>
@@ -82,28 +163,28 @@ export default function Dashboard() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               <MetricCard
                 label="Autonomous Actions"
-                value="95%"
+                value={`${metrics.autonomousActions}%`}
                 icon={Target}
                 trend={{ value: 2.3, isPositive: true }}
                 testId="metric-autonomous-actions"
               />
               <MetricCard
                 label="Prevention Savings"
-                value="$128K"
+                value={`$${Math.round(metrics.preventionSavings / 1000)}K`}
                 icon={DollarSign}
                 trend={{ value: 12, isPositive: true }}
                 testId="metric-prevention-savings"
               />
               <MetricCard
                 label="Prediction Accuracy"
-                value="89%"
+                value={`${Math.round(metrics.predictionAccuracy)}%`}
                 icon={TrendingUp}
                 trend={{ value: 2.1, isPositive: true }}
                 testId="metric-prediction-accuracy"
               />
               <MetricCard
                 label="Active Incidents"
-                value="3"
+                value={metrics.activeIncidents}
                 icon={AlertTriangle}
                 trend={{ value: 40, isPositive: false }}
                 testId="metric-active-incidents"
@@ -115,7 +196,7 @@ export default function Dashboard() {
                 <div>
                   <h2 className="text-lg font-semibold mb-4">Active Agents</h2>
                   <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-                    {AGENTS.map((agent) => (
+                    {agents.map((agent) => (
                       <AgentCard key={agent.id} {...agent} />
                     ))}
                   </div>
@@ -124,7 +205,7 @@ export default function Dashboard() {
                 <div>
                   <h2 className="text-lg font-semibold mb-4">Upcoming Predictions</h2>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {PREDICTIONS.slice(0, 2).map((prediction) => (
+                    {predictions.slice(0, 2).map((prediction) => (
                       <PredictionCard key={prediction.id} {...prediction} />
                     ))}
                   </div>
@@ -135,7 +216,7 @@ export default function Dashboard() {
                 <Card className="p-4">
                   <h2 className="text-sm font-semibold mb-4">Live Decision Feed</h2>
                   <div className="space-y-0 max-h-[800px] overflow-y-auto">
-                    {RECENT_DECISIONS.map((decision) => (
+                    {decisions.map((decision) => (
                       <DecisionLogItem key={decision.id} {...decision} />
                     ))}
                   </div>
@@ -148,7 +229,7 @@ export default function Dashboard() {
             <div>
               <h2 className="text-lg font-semibold mb-4">All Agents Status</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-                {AGENTS.map((agent) => (
+                {agents.map((agent) => (
                   <AgentCard key={agent.id} {...agent} />
                 ))}
               </div>
@@ -159,7 +240,7 @@ export default function Dashboard() {
             <div>
               <h2 className="text-lg font-semibold mb-4">Predictive Timeline - Next 72 Hours</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {PREDICTIONS.map((prediction) => (
+                {predictions.map((prediction) => (
                   <PredictionCard key={prediction.id} {...prediction} />
                 ))}
               </div>
@@ -170,7 +251,7 @@ export default function Dashboard() {
             <Card className="p-6">
               <h2 className="text-lg font-semibold mb-4">Autonomous Decision Log</h2>
               <div className="space-y-0">
-                {RECENT_DECISIONS.map((decision) => (
+                {decisions.map((decision) => (
                   <DecisionLogItem key={decision.id} {...decision} />
                 ))}
               </div>
