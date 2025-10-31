@@ -62,7 +62,7 @@ export function PredictionCard({
           <DollarSign className="h-3.5 w-3.5 text-muted-foreground" />
           <div>
             <div className="text-xs text-muted-foreground">Est. Impact</div>
-            <div className="text-sm font-mono font-medium">${estimatedImpact.toLocaleString()}</div>
+            <div className="text-sm font-mono font-medium">${estimatedImpact?.toLocaleString() || '0'}</div>
           </div>
         </div>
       </div>
