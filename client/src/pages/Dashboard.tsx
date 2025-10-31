@@ -37,7 +37,10 @@ export default function Dashboard() {
 
   // WebSocket connection for real-time updates from Python backend
   useEffect(() => {
-    setIsConnected(wsManager.isConnected());
+    // Subscribe to connection status changes
+    const unsubscribeConnection = wsManager.onConnectionChange((connected) => {
+      setIsConnected(connected);
+    });
 
     const unsubscribe = wsManager.subscribe((message) => {
       console.log("Received WebSocket message:", message);
@@ -110,14 +113,9 @@ export default function Dashboard() {
       }
     });
 
-    // Check connection status periodically
-    const connectionCheck = setInterval(() => {
-      setIsConnected(wsManager.isConnected());
-    }, 1000);
-
     return () => {
       unsubscribe();
-      clearInterval(connectionCheck);
+      unsubscribeConnection();
     };
   }, []);
 

@@ -12,11 +12,13 @@ type WebSocketMessage = {
 };
 
 type MessageHandler = (message: WebSocketMessage) => void;
+type ConnectionHandler = (connected: boolean) => void;
 
 class WebSocketManager {
   private ws: WebSocket | null = null;
   private reconnectTimer: NodeJS.Timeout | null = null;
   private handlers: Set<MessageHandler> = new Set();
+  private connectionHandlers: Set<ConnectionHandler> = new Set();
   private url: string;
   private reconnectAttempts = 0;
   private maxReconnectAttempts = 10;
@@ -39,6 +41,7 @@ class WebSocketManager {
       this.ws.onopen = () => {
         console.log("✅ WebSocket connected to Python backend");
         this.reconnectAttempts = 0;
+        this.notifyConnectionChange(true);
       };
 
       this.ws.onmessage = (event) => {
@@ -57,6 +60,7 @@ class WebSocketManager {
       this.ws.onclose = () => {
         console.log("WebSocket disconnected");
         this.ws = null;
+        this.notifyConnectionChange(false);
         this.scheduleReconnect();
       };
     } catch (error) {
@@ -98,11 +102,23 @@ class WebSocketManager {
     }
 
     this.handlers.clear();
+    this.connectionHandlers.clear();
   }
 
   subscribe(handler: MessageHandler) {
     this.handlers.add(handler);
     return () => this.handlers.delete(handler);
+  }
+
+  onConnectionChange(handler: ConnectionHandler) {
+    this.connectionHandlers.add(handler);
+    // Immediately notify of current state
+    handler(this.isConnected());
+    return () => this.connectionHandlers.delete(handler);
+  }
+
+  private notifyConnectionChange(connected: boolean) {
+    this.connectionHandlers.forEach(handler => handler(connected));
   }
 
   send(data: any) {
