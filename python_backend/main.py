@@ -32,19 +32,31 @@ async def lifespan(app: FastAPI):
     # Load generated data
     logger.info("📊 Loading generated MSP data...")
     try:
-        with open('python_backend/generated_data.json', 'r') as f:
-            data_store = json.load(f)
-        logger.info(f"✅ Loaded {data_store['summary']['total_records']:,} records")
-    except FileNotFoundError:
-        logger.warning("⚠️  Generated data not found, creating minimal dataset...")
-        data_store = {
-            "clients": [],
-            "servers": [],
-            "tickets": [],
-            "incidents": [],
-            "metrics": [],
-            "decisions": []
-        }
+        # Try different paths
+        import os
+        possible_paths = [
+            'generated_data.json',
+            'python_backend/generated_data.json',
+            os.path.join(os.path.dirname(__file__), 'generated_data.json')
+        ]
+        
+        data_store = None
+        for path in possible_paths:
+            if os.path.exists(path):
+                with open(path, 'r') as f:
+                    data_store = json.load(f)
+                logger.info(f"✅ Loaded {data_store['summary']['total_records']:,} records from {path}")
+                break
+        
+        if data_store is None:
+            raise FileNotFoundError("Could not find generated_data.json")
+            
+    except FileNotFoundError as e:
+        logger.warning(f"⚠️  Generated data not found: {e}")
+        logger.info("📊 Generating data on-the-fly...")
+        from data_generator import MSPDataGenerator
+        generator = MSPDataGenerator()
+        data_store = generator.generate_all_data()
     
     # Startup
     if use_bedrock:
