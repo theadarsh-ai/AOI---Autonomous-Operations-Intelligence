@@ -72,7 +72,20 @@ export default function Dashboard() {
 
   useEffect(() => {
     if (decisionsData?.recent_decisions) {
-      setDecisions(decisionsData.recent_decisions.slice(0, 10));
+      const mappedDecisions = decisionsData.recent_decisions.slice(0, 10).map((decision: any) => ({
+        id: decision.decision_id,
+        timestamp: new Date(decision.timestamp).toLocaleTimeString(),
+        agentName: "Decision Agent",
+        agentIcon: MOCK_DECISIONS[0].agentIcon,
+        agentColor: MOCK_DECISIONS[0].agentColor,
+        decisionType: decision.decision_type?.replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase()) || "Unknown",
+        description: decision.action_description || decision.predicted_impact || "No description",
+        cost: decision.estimated_cost_usd || 0,
+        roi: decision.estimated_roi || 0,
+        autonomyLevel: decision.autonomy_level || 1,
+        autoApproved: decision.auto_approved || false,
+      }));
+      setDecisions(mappedDecisions);
     }
   }, [decisionsData]);
 

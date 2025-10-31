@@ -39,7 +39,7 @@ export function DecisionLogItem({
   const levelConfig = autonomyLevelConfig[autonomyLevel];
 
   return (
-    <div className="py-3 border-b last:border-b-0" data-testid={`decision-log-${decisionType.toLowerCase().replace(/\s+/g, '-')}`}>
+    <div className="py-3 border-b last:border-b-0" data-testid={`decision-log-${decisionType?.toLowerCase().replace(/\s+/g, '-') || 'unknown'}`}>
       <div className="flex items-start gap-3">
         <div className={cn("p-1.5 rounded-md flex-shrink-0", agentColor)}>
           <Icon className="h-3.5 w-3.5 text-white" />
@@ -62,10 +62,10 @@ export function DecisionLogItem({
           </p>
           <div className="flex flex-wrap items-center gap-2">
             <Badge variant="outline" className="text-xs">
-              Cost: ${cost.toLocaleString()}
+              Cost: ${(cost || 0).toLocaleString()}
             </Badge>
             <Badge variant="outline" className="text-xs">
-              ROI: {roi}:1
+              ROI: {(roi || 0)}:1
             </Badge>
             <Badge variant="secondary" className="text-xs">
               {levelConfig.label}
