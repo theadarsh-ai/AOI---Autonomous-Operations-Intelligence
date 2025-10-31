@@ -139,11 +139,14 @@ class AWSClients:
         }
         
         try:
-            # Test Bedrock Runtime
-            models = self.bedrock_runtime.list_foundation_models()
+            # Test Bedrock Runtime (just verify client is configured)
+            # Note: list_foundation_models is on bedrock control plane, not runtime
+            # Runtime client requires invoke_model which needs a prompt
+            # For connection test, we just verify the client initializes correctly
+            _ = self.bedrock_runtime
             results['services']['bedrock_runtime'] = {
-                'status': 'connected',
-                'models_available': len(models.get('modelSummaries', []))
+                'status': 'configured',
+                'ready': True
             }
         except Exception as e:
             results['services']['bedrock_runtime'] = {'status': 'error', 'error': str(e)}
