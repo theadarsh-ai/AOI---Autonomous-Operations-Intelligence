@@ -185,13 +185,15 @@ async def get_status():
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
     await manager.connect(websocket)
+    logger.info(f"✅ WebSocket client connected. Total connections: {len(manager.active_connections)}")
     try:
+        # Keep connection alive - just wait for messages or disconnect
         while True:
-            data = await websocket.receive_text()
-            logger.info(f"Received from client: {data}")
+            await asyncio.sleep(1)  # Keepalive - prevents tight loop
+            # broadcast_updates() will send data to all connections
     except WebSocketDisconnect:
         manager.disconnect(websocket)
-        logger.info("Client disconnected")
+        logger.info(f"❌ WebSocket client disconnected. Total connections: {len(manager.active_connections)}")
 
 async def run_autonomous_workflows():
     """Run autonomous agent workflows continuously"""

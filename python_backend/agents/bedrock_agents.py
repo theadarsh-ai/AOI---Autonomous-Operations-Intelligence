@@ -124,8 +124,9 @@ class BedrockAgentOrchestrator:
                 ]
             }
             
+            # Use cross-region inference profile for Claude 3.5 Sonnet
             response = self.aws_clients.bedrock_runtime.invoke_model(
-                modelId="anthropic.claude-3-5-sonnet-20241022-v2:0",
+                modelId="us.anthropic.claude-3-5-sonnet-20240620-v1:0",
                 body=json.dumps(body)
             )
             

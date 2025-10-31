@@ -23,7 +23,7 @@ class WebSocketManager {
   private reconnectAttempts = 0;
   private maxReconnectAttempts = 10;
 
-  constructor(url: string = "ws://localhost:8000/ws") {
+  constructor(url: string = "ws://localhost:5000/ws") {
     this.url = url;
   }
 
