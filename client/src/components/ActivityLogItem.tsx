@@ -48,16 +48,30 @@ export function ActivityLogItem({
   const levelInfo = levelConfig[level];
   const Icon = levelInfo.icon;
 
-  // Convert 24-hour format to 12-hour format with AM/PM
-  const formatTime = (time: string) => {
+  // Convert timestamp to relative time (e.g., "2 mins ago", "just now")
+  const getRelativeTime = (time: string) => {
+    const now = new Date();
     const [hours24, minutes, seconds] = time.split(':');
-    const hours = parseInt(hours24);
-    const period = hours >= 12 ? 'PM' : 'AM';
-    const hours12 = hours % 12 || 12;
-    return `${hours12}:${minutes}:${seconds} ${period}`;
+    
+    // Create today's date with the given time
+    const activityTime = new Date();
+    activityTime.setHours(parseInt(hours24), parseInt(minutes), parseInt(seconds));
+    
+    // Calculate difference in seconds
+    const diffMs = now.getTime() - activityTime.getTime();
+    const diffSecs = Math.floor(diffMs / 1000);
+    
+    if (diffSecs < 10) return 'just now';
+    if (diffSecs < 60) return `${diffSecs} secs ago`;
+    
+    const diffMins = Math.floor(diffSecs / 60);
+    if (diffMins < 60) return `${diffMins} min${diffMins > 1 ? 's' : ''} ago`;
+    
+    const diffHours = Math.floor(diffMins / 60);
+    return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
   };
 
-  const formattedTime = formatTime(timestamp);
+  const formattedTime = getRelativeTime(timestamp);
 
   return (
     <div
