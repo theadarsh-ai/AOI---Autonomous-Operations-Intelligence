@@ -48,13 +48,20 @@ export function ActivityLogItem({
   const levelInfo = levelConfig[level];
   const Icon = levelInfo.icon;
 
-  // Show current time (same as header)
-  const formattedTime = new Date().toLocaleTimeString('en-US', { 
-    hour: 'numeric', 
-    minute: '2-digit', 
-    second: '2-digit', 
-    hour12: true 
-  });
+  // Convert timestamp to exact same format as header
+  const formatTime = (time: string) => {
+    const [hours24, minutes, seconds] = time.split(':');
+    const date = new Date();
+    date.setHours(parseInt(hours24), parseInt(minutes), parseInt(seconds));
+    return date.toLocaleTimeString('en-US', { 
+      hour: 'numeric', 
+      minute: '2-digit', 
+      second: '2-digit', 
+      hour12: true 
+    });
+  };
+
+  const formattedTime = formatTime(timestamp);
 
   return (
     <div
