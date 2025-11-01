@@ -16,14 +16,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const wss = new WebSocketServer({ noServer: true });
 
   httpServer.on('upgrade', (request, socket, head) => {
+    console.log(`[WebSocket] Upgrade request received for: ${request.url}`);
+    
     // Only handle /ws WebSocket connections
     if (request.url === '/ws') {
+      console.log('[WebSocket] Handling /ws upgrade...');
+      
       wss.handleUpgrade(request, socket, head, (ws) => {
+        console.log('[WebSocket Proxy] Frontend client connected, connecting to Python backend...');
+        
         // Create connection to Python backend
-        const backendWs = new WebSocket('ws://localhost:8000/ws');
+        const backendWs = new WebSocket('ws://0.0.0.0:8000/ws');
 
         backendWs.on('open', () => {
-          console.log('[WebSocket Proxy] Connected to Python backend');
+          console.log('[WebSocket Proxy] ✅ Connected to Python backend');
         });
 
         // Forward messages from Python backend to frontend
@@ -43,24 +49,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Handle disconnections
         ws.on('close', () => {
           console.log('[WebSocket Proxy] Frontend disconnected');
-          backendWs.close();
+          if (backendWs.readyState === WebSocket.OPEN) {
+            backendWs.close();
+          }
         });
 
         backendWs.on('close', () => {
           console.log('[WebSocket Proxy] Backend disconnected');
-          ws.close();
+          if (ws.readyState === WebSocket.OPEN) {
+            ws.close();
+          }
         });
 
         backendWs.on('error', (error) => {
-          console.error('[WebSocket Proxy] Backend error:', error);
-          ws.close();
+          console.error('[WebSocket Proxy] Backend error:', error.message);
+          if (ws.readyState === WebSocket.OPEN) {
+            ws.close();
+          }
         });
 
         ws.on('error', (error) => {
-          console.error('[WebSocket Proxy] Frontend error:', error);
-          backendWs.close();
+          console.error('[WebSocket Proxy] Frontend error:', error.message);
+          if (backendWs.readyState === WebSocket.OPEN) {
+            backendWs.close();
+          }
         });
       });
+    } else {
+      console.log(`[WebSocket] Ignoring upgrade for: ${request.url}`);
+      socket.destroy();
     }
   });
 
