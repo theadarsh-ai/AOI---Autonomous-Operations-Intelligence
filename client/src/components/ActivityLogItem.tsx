@@ -48,13 +48,17 @@ export function ActivityLogItem({
   const levelInfo = levelConfig[level];
   const Icon = levelInfo.icon;
 
-  // Convert 24-hour format timestamp to 12-hour format with AM/PM
+  // Convert timestamp to exact same format as header
   const formatTime = (time: string) => {
     const [hours24, minutes, seconds] = time.split(':');
-    const hours = parseInt(hours24);
-    const period = hours >= 12 ? 'PM' : 'AM';
-    const hours12 = hours % 12 || 12;
-    return `${hours12}:${minutes}:${seconds} ${period}`;
+    const date = new Date();
+    date.setHours(parseInt(hours24), parseInt(minutes), parseInt(seconds));
+    return date.toLocaleTimeString('en-US', { 
+      hour: 'numeric', 
+      minute: '2-digit', 
+      second: '2-digit', 
+      hour12: true 
+    });
   };
 
   const formattedTime = formatTime(timestamp);
