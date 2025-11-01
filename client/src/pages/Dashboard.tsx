@@ -368,9 +368,14 @@ export default function Dashboard() {
                   <h2 className="text-lg font-semibold">Live Agent Activity</h2>
                   <p className="text-sm text-muted-foreground">Real-time autonomous agent operations - proof that agents are working</p>
                 </div>
-                <Badge variant="secondary" data-testid="text-activity-count">
-                  {activities.length} activities
-                </Badge>
+                <div className="flex items-center gap-3">
+                  <div className="text-sm font-mono text-muted-foreground">
+                    {currentTime.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', second: '2-digit', hour12: true })}
+                  </div>
+                  <Badge variant="secondary" data-testid="text-activity-count">
+                    {activities.length} activities
+                  </Badge>
+                </div>
               </div>
               <div className="space-y-0 max-h-[800px] overflow-y-auto border rounded-md">
                 {activities.length === 0 ? (
