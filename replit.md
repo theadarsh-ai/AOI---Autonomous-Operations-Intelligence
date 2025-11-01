@@ -6,12 +6,14 @@ A fully autonomous AI-powered MSP (Managed Service Provider) management system t
 
 The application features a hybrid architecture combining a Python FastAPI backend (with Strands Agents for autonomous decision-making) and a React TypeScript frontend (with real-time dashboard visualizations). **Both services now start automatically** when the Replit opens - no manual commands needed!
 
-**Current Status (Oct 31, 2025):**
+**Current Status (Nov 1, 2025):**
 - ✅ **Fully Operational** - Frontend + Backend running automatically
 - ✅ **AWS Connected** - Bedrock, DynamoDB, S3 all connected
 - ✅ **29,100 Data Records** - Real operational data loaded
-- ✅ **8 AI Agents Active** - All autonomous agents initialized
+- ✅ **8 AI Agents Fully Autonomous** - All agents running 24/7 with continuous cycles
+- ✅ **Live Activity Logging** - All 8 agents visible in real-time dashboard
 - ✅ **REST API Working** - Live data flowing via Express → Python proxy
+- ✅ **Background Orchestration** - Agent cycles execute every 10-15 seconds automatically
 - ⏳ **WebSocket** - Real-time streaming in progress (frontend polls REST API)
 - ⏳ **Claude AI** - Requires AWS model access approval (using simulation fallback)
 
@@ -74,6 +76,56 @@ The system implements 8 specialized AI agents using the Strands framework:
 - Decision tools: approval evaluation, ROI calculation, execution
 - Resource tools: technician assignment, schedule optimization
 - Security tools: vulnerability scanning, auto-remediation
+
+**Autonomous Agent Workflows:**
+Each agent runs continuously in 10-15 second cycles, executing specialized tasks:
+
+1. **Master Orchestrator** (`orchestrator_cycle`):
+   - Coordinates all sub-agents every cycle
+   - Logs "Cycle Coordination" with unique cycle ID
+   - Manages global state and resolves conflicts
+
+2. **Predictive Monitoring** (`predictive_monitoring_cycle`):
+   - Analyzes server metrics and client incidents
+   - Predicts failures 24-48 hours ahead (70% execution probability)
+   - Generates predictions with severity, probability, estimated impact
+
+3. **Autonomous Decision** (`autonomous_decision_cycle`):
+   - Evaluates predictions and calculates ROI (60% execution probability)
+   - Auto-approves decisions based on 3-tier autonomy levels
+   - Escalates high-cost decisions (>$10K) to human review
+
+4. **Resource Optimization** (`resource_optimization_cycle`):
+   - Assigns technicians to approved preventive actions
+   - Optimizes schedules based on technician skills
+   - Logs assignments with estimated hours
+
+5. **Client Lifecycle** (`client_lifecycle_cycle`):
+   - Monitors client health scores (50% execution probability)
+   - Initiates proactive outreach for at-risk clients
+   - Automates renewal processes
+
+6. **Financial Intelligence** (`financial_intelligence_cycle`):
+   - Analyzes client profitability and service utilization (40% execution probability)
+   - Adjusts pricing based on data-driven insights
+   - Tracks ROI and cost optimization
+
+7. **Security & Compliance** (`security_compliance_cycle`):
+   - Scans for vulnerabilities on critical servers (60% execution probability)
+   - Auto-remediates security issues
+   - Performs monthly compliance audits
+
+8. **Learning & Adaptation** (`learning_adaptation_cycle`):
+   - Analyzes incident prevention rate (50% execution probability)
+   - Updates AI models based on outcomes
+   - Logs performance analysis and continuous improvements
+
+**Background Orchestration:**
+- `run_agents_continuously()` task runs every 10-15 seconds
+- Executes `orchestrator.run_all_agents_cycle()` for complete cycle
+- All agents log activity to `activity_log` for real-time visibility
+- Frontend polls `/api/activity` every 3 seconds for Live Activity tab
+- Probabilistic execution (30-70% per agent) creates realistic operational patterns
 
 **API Architecture:**
 - RESTful endpoints for agents, decisions, predictions, metrics
