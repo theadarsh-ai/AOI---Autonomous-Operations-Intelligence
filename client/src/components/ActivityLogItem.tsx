@@ -48,6 +48,17 @@ export function ActivityLogItem({
   const levelInfo = levelConfig[level];
   const Icon = levelInfo.icon;
 
+  // Convert 24-hour format to 12-hour format with AM/PM
+  const formatTime = (time: string) => {
+    const [hours24, minutes, seconds] = time.split(':');
+    const hours = parseInt(hours24);
+    const period = hours >= 12 ? 'PM' : 'AM';
+    const hours12 = hours % 12 || 12;
+    return `${hours12}:${minutes}:${seconds} ${period}`;
+  };
+
+  const formattedTime = formatTime(timestamp);
+
   return (
     <div
       className="flex items-start gap-3 py-3 px-4 hover-elevate rounded-md transition-colors border-b border-border last:border-0"
@@ -61,7 +72,7 @@ export function ActivityLogItem({
           <Badge variant="outline" className="text-xs font-medium">
             {agent}
           </Badge>
-          <span className="text-xs text-muted-foreground">{timestamp}</span>
+          <span className="text-xs text-muted-foreground">{formattedTime}</span>
         </div>
         <div className="text-sm font-medium mb-0.5">{action}</div>
         <div className="text-xs text-muted-foreground">{details}</div>
