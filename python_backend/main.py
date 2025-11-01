@@ -32,6 +32,11 @@ background_task = None
 async def run_agents_continuously():
     """Background task that runs all 8 agents autonomously every 10-15 seconds"""
     global orchestrator
+    
+    # IMPORTANT: Wait for Uvicorn to fully start before running agents
+    logger.info("⏳ Waiting 15 seconds for server to fully initialize...")
+    await asyncio.sleep(15)
+    
     logger.info("🤖 Starting continuous autonomous agent execution...")
     
     while True:
@@ -116,7 +121,8 @@ async def lifespan(app: FastAPI):
     app.state.use_bedrock = use_bedrock
     
     # Start background tasks
-    asyncio.create_task(run_autonomous_workflows())
+    # NOTE: run_autonomous_workflows() is disabled because it blocks the server for 70+ seconds
+    # asyncio.create_task(run_autonomous_workflows())
     asyncio.create_task(broadcast_updates())
     asyncio.create_task(run_agents_continuously())  # New: Run all 8 agents continuously
     
