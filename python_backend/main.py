@@ -5,6 +5,7 @@ import asyncio
 import os
 import logging
 import json
+import random
 
 from agents.websocket_manager import ConnectionManager
 from routes import agents, decisions, predictions, metrics, activity
@@ -25,9 +26,31 @@ use_bedrock = all([
 orchestrator = None
 aws_clients = None
 
+# Background task for running all agents continuously
+background_task = None
+
+async def run_agents_continuously():
+    """Background task that runs all 8 agents autonomously every 10-15 seconds"""
+    global orchestrator
+    logger.info("🤖 Starting continuous autonomous agent execution...")
+    
+    while True:
+        try:
+            if orchestrator:
+                # Run all agents
+                await orchestrator.run_all_agents_cycle()
+                
+                # Wait 10-15 seconds before next cycle
+                await asyncio.sleep(random.randint(10, 15))
+            else:
+                await asyncio.sleep(5)
+        except Exception as e:
+            logger.error(f"Error in continuous agent execution: {e}")
+            await asyncio.sleep(10)
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    global orchestrator, aws_clients
+    global orchestrator, aws_clients, background_task
     
     # Load generated data
     logger.info("📊 Loading generated MSP data...")
@@ -95,6 +118,7 @@ async def lifespan(app: FastAPI):
     # Start background tasks
     asyncio.create_task(run_autonomous_workflows())
     asyncio.create_task(broadcast_updates())
+    asyncio.create_task(run_agents_continuously())  # New: Run all 8 agents continuously
     
     yield
     # Shutdown

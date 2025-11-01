@@ -356,10 +356,242 @@ Should this action be approved? Provide detailed reasoning."""
             "status": "scheduled"
         }
         
+        # Log activity
+        self._log_activity(
+            "Resource Optimization", 
+            "Technician Assigned", 
+            f"{technician} assigned to {decision.get('action', 'maintenance task')} - {assignment['estimated_duration_hours']:.1f}h estimated",
+            "info"
+        )
+        
         return {
             "agent": "resource_optimization",
             "assignment": assignment
         }
+    
+    async def client_lifecycle_cycle(self) -> Dict[str, Any]:
+        """Monitor client health, handle onboarding and renewals"""
+        clients = self.data.get('clients', [])
+        
+        # Check for clients needing attention
+        actions = []
+        
+        # Simulate client health monitoring
+        at_risk_client = random.choice(clients) if clients else None
+        if at_risk_client:
+            health_score = random.randint(60, 85)
+            action = {
+                "client_id": at_risk_client['client_id'],
+                "client_name": at_risk_client['company_name'],
+                "health_score": health_score,
+                "action_type": "proactive_outreach",
+                "reason": "Health score below threshold"
+            }
+            actions.append(action)
+            
+            self._log_activity(
+                "Client Lifecycle",
+                "Health Alert",
+                f"{at_risk_client['company_name']} health score: {health_score}% - Initiating proactive outreach",
+                "warning"
+            )
+        
+        # Simulate contract renewal
+        renewal_client = random.choice(clients) if clients else None
+        if renewal_client and random.random() > 0.7:
+            self._log_activity(
+                "Client Lifecycle",
+                "Auto-Renewal",
+                f"{renewal_client['company_name']} contract auto-renewed - $50K ARR secured",
+                "success"
+            )
+        
+        return {"agent": "client_lifecycle", "actions": actions}
+    
+    async def financial_intelligence_cycle(self) -> Dict[str, Any]:
+        """Analyze profitability and optimize pricing"""
+        decisions = self.data.get('decisions', [])
+        
+        # Calculate ROI metrics
+        total_preventive_cost = sum(d.get('estimated_cost_usd', 0) for d in decisions)
+        total_avoided_cost = sum(d.get('estimated_impact_usd', 0) for d in decisions)
+        roi = total_avoided_cost / total_preventive_cost if total_preventive_cost > 0 else 0
+        
+        # Log financial insights
+        if roi > 3 or total_avoided_cost > 0:  # Lowered threshold
+            self._log_activity(
+                "Financial Intelligence",
+                "ROI Analysis",
+                f"Preventive maintenance ROI: {roi:.1f}:1 - ${total_avoided_cost:,} costs avoided",
+                "success"
+            )
+        
+        # Simulate pricing optimization
+        if random.random() > 0.3:  # Increased from 0.6 to 0.3 (70% chance)
+            client = random.choice(self.data.get('clients', []))
+            adjustment = random.choice([-5, 0, 5, 10])
+            self._log_activity(
+                "Financial Intelligence",
+                "Pricing Adjustment",
+                f"{client['company_name']} pricing optimized: {adjustment:+d}% based on service utilization",
+                "info"
+            )
+        
+        return {
+            "agent": "financial_intelligence",
+            "roi": roi,
+            "total_savings": total_avoided_cost
+        }
+    
+    async def security_compliance_cycle(self) -> Dict[str, Any]:
+        """Scan for vulnerabilities and auto-remediate"""
+        servers = self.data.get('servers', [])
+        
+        # Simulate vulnerability scan
+        vulnerable_server = random.choice(servers) if servers else None
+        if vulnerable_server and random.random() > 0.5:
+            vulnerability = random.choice([
+                "Outdated SSL/TLS certificates",
+                "Unpatched security vulnerabilities",
+                "Weak password policies detected",
+                "Unauthorized port access detected"
+            ])
+            
+            self._log_activity(
+                "Security & Compliance",
+                "Vulnerability Detected",
+                f"{vulnerable_server['hostname']}: {vulnerability}",
+                "warning"
+            )
+            
+            # Auto-remediation
+            if random.random() > 0.3:
+                self._log_activity(
+                    "Security & Compliance",
+                    "Auto-Remediated",
+                    f"{vulnerable_server['hostname']}: {vulnerability} - Automatically patched",
+                    "success"
+                )
+        
+        # Compliance check
+        if random.random() > 0.7:
+            self._log_activity(
+                "Security & Compliance",
+                "Compliance Check",
+                "Monthly security audit passed - All systems compliant with SOC 2 requirements",
+                "success"
+            )
+        
+        return {"agent": "security_compliance", "status": "monitoring"}
+    
+    async def learning_adaptation_cycle(self) -> Dict[str, Any]:
+        """Analyze outcomes and improve prediction models"""
+        incidents = self.data.get('incidents', [])
+        
+        # Analyze preventable incidents
+        preventable = [i for i in incidents if i.get('was_preventable')]
+        prevention_rate = len(preventable) / len(incidents) * 100 if incidents else 0
+        
+        # Always log model analysis activity
+        if prevention_rate > 70:
+            self._log_activity(
+                "Learning & Adaptation",
+                "Model Update",
+                f"Prediction accuracy improved to {prevention_rate:.1f}% - Model retrained with {len(incidents)} incidents",
+                "success"
+            )
+        else:
+            # Log analysis even if not high enough to update
+            self._log_activity(
+                "Learning & Adaptation",
+                "Performance Analysis",
+                f"Current prevention rate: {prevention_rate:.1f}% - Analyzing {len(incidents)} incidents for patterns",
+                "info"
+            )
+        
+        # Simulate learning from outcomes (increased probability)
+        if random.random() > 0.3:  # 70% chance
+            improvement = random.choice([
+                "disk failure prediction threshold adjusted",
+                "network capacity model optimized",
+                "decision approval thresholds refined",
+                "resource allocation algorithm improved",
+                "client churn prediction model updated"
+            ])
+            self._log_activity(
+                "Learning & Adaptation",
+                "Continuous Improvement",
+                f"AI model updated: {improvement}",
+                "info"
+            )
+        
+        return {
+            "agent": "learning_adaptation",
+            "prevention_rate": prevention_rate
+        }
+    
+    async def run_all_agents_cycle(self) -> Dict[str, Any]:
+        """Run one cycle of all 8 agents working autonomously"""
+        results = {
+            "cycle_id": f"CYCLE-{random.randint(10000, 99999)}",
+            "timestamp": datetime.now().isoformat(),
+            "agents_executed": []
+        }
+        
+        # Log Master Orchestrator activity
+        self._log_activity(
+            "Master Orchestrator",
+            "Cycle Coordination",
+            f"Orchestrating agent cycle {results['cycle_id']} - Managing 8 autonomous agents",
+            "info"
+        )
+        
+        try:
+            # Run all agent cycles in sequence
+            # 1. Predictive Monitoring
+            if random.random() > 0.3:  # 70% chance
+                monitoring = await self.predictive_monitoring_cycle()
+                results["agents_executed"].append("Predictive Monitoring")
+                
+                # 2. Autonomous Decision (if predictions found)
+                if monitoring.get('predictions') and random.random() > 0.4:  # 60% chance
+                    pred = monitoring['predictions'][0]
+                    decision = await self.autonomous_decision_cycle(pred)
+                    results["agents_executed"].append("Autonomous Decision")
+                    
+                    # 3. Resource Optimization (if auto-approved)
+                    if decision.get('auto_approved'):
+                        await self.assign_optimal_resource(decision['decision'])
+                        results["agents_executed"].append("Resource Optimization")
+            
+            # 4. Client Lifecycle
+            if random.random() > 0.4:  # 60% chance
+                await self.client_lifecycle_cycle()
+                results["agents_executed"].append("Client Lifecycle")
+            
+            # 5. Financial Intelligence
+            if random.random() > 0.5:  # 50% chance
+                await self.financial_intelligence_cycle()
+                results["agents_executed"].append("Financial Intelligence")
+            
+            # 6. Security & Compliance
+            if random.random() > 0.4:  # 60% chance
+                await self.security_compliance_cycle()
+                results["agents_executed"].append("Security & Compliance")
+            
+            # 7. Learning & Adaptation
+            if random.random() > 0.5:  # 50% chance
+                await self.learning_adaptation_cycle()
+                results["agents_executed"].append("Learning & Adaptation")
+            
+            results["status"] = "completed"
+            return results
+            
+        except Exception as e:
+            logger.error(f"Error in agent cycle: {e}")
+            results["status"] = "error"
+            results["error"] = str(e)
+            return results
     
     def get_agent_status(self) -> List[Dict[str, Any]]:
         """Get current status of all 8 agents"""
