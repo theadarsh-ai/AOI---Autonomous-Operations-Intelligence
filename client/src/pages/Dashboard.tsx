@@ -15,14 +15,12 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Target, TrendingUp, AlertTriangle, DollarSign } from "lucide-react";
 import { AGENTS as MOCK_AGENTS, RECENT_DECISIONS as MOCK_DECISIONS, PREDICTIONS as MOCK_PREDICTIONS } from "@/lib/mockData";
-import { wsManager } from "@/lib/websocket";
 
 export default function Dashboard() {
   const [currentTime, setCurrentTime] = useState(new Date());
-  const [isConnected, setIsConnected] = useState(false);
 
   // Fetch live data from REST API
-  const { data: agentsData } = useQuery({
+  const { data: agentsData, isSuccess: agentsSuccess } = useQuery({
     queryKey: ['/api/agents'],
     refetchInterval: 5000, // Poll every 5 seconds
   });
@@ -42,10 +40,13 @@ export default function Dashboard() {
     refetchInterval: 5000,
   });
 
-  const { data: activityData } = useQuery({
+  const { data: activityData, isSuccess: activitySuccess } = useQuery({
     queryKey: ['/api/activity'],
     refetchInterval: 3000, // Poll every 3 seconds for real-time feel
   });
+
+  // Connection is "live" when REST API is successfully returning data
+  const isConnected = agentsSuccess || activitySuccess;
 
   // Use live data if available, otherwise fall back to mock data
   const [agents, setAgents] = useState(MOCK_AGENTS);
@@ -82,7 +83,7 @@ export default function Dashboard() {
     if (decisionsData?.recent_decisions) {
       const mappedDecisions = decisionsData.recent_decisions.slice(0, 10).map((decision: any) => ({
         id: decision.decision_id,
-        timestamp: new Date(decision.timestamp).toLocaleTimeString(),
+        timestamp: new Date(decision.timestamp).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', second: '2-digit', hour12: true }),
         agentName: "Decision Agent",
         agentIcon: MOCK_DECISIONS[0].agentIcon,
         agentColor: MOCK_DECISIONS[0].agentColor,
@@ -127,89 +128,7 @@ export default function Dashboard() {
     return () => clearInterval(interval);
   }, []);
 
-  // WebSocket connection for real-time updates from Python backend
-  useEffect(() => {
-    // Subscribe to connection status changes
-    const unsubscribeConnection = wsManager.onConnectionChange((connected) => {
-      setIsConnected(connected);
-    });
-
-    const unsubscribe = wsManager.subscribe((message) => {
-      console.log("Received WebSocket message:", message);
-      
-      if (message.type === "system_update") {
-        // Update agents if provided
-        if (message.agents && message.agents.length > 0) {
-          const updatedAgents = MOCK_AGENTS.map((mockAgent) => {
-            const liveAgent = message.agents?.find((a: any) => a.id === mockAgent.id);
-            if (liveAgent) {
-              return {
-                ...mockAgent,
-                status: liveAgent.status as any,
-                activeTasks: liveAgent.active_tasks || mockAgent.activeTasks,
-                uptime: liveAgent.uptime || mockAgent.uptime,
-                decisionsPerHour: liveAgent.decisions_per_hour || mockAgent.decisionsPerHour,
-                accuracy: liveAgent.accuracy || mockAgent.accuracy
-              };
-            }
-            return mockAgent;
-          });
-          setAgents(updatedAgents);
-        }
-
-        // Update predictions if provided
-        if (message.predictions && message.predictions.length > 0) {
-          const updatedPredictions = message.predictions.map((p: any) => ({
-            id: p.id,
-            agentName: p.agent_name,
-            agentIcon: MOCK_PREDICTIONS[0].agentIcon,
-            agentColor: MOCK_PREDICTIONS[0].agentColor,
-            type: p.type as 'outage' | 'performance' | 'cost' | 'security',
-            description: p.description,
-            probability: p.probability,
-            timeframe: p.timeframe,
-            impact: p.impact,
-            preventiveCost: p.preventive_cost,
-            failureCost: p.failure_cost
-          }));
-          setPredictions(updatedPredictions);
-        }
-
-        // Update recent decision if provided
-        if (message.recent_decision) {
-          const newDecision = {
-            id: message.recent_decision.id,
-            timestamp: message.recent_decision.timestamp,
-            agentName: message.recent_decision.agent_name,
-            agentIcon: MOCK_DECISIONS[0].agentIcon,
-            agentColor: MOCK_DECISIONS[0].agentColor,
-            decisionType: message.recent_decision.decision_type,
-            description: message.recent_decision.description,
-            cost: message.recent_decision.cost,
-            roi: message.recent_decision.roi,
-            autonomyLevel: message.recent_decision.autonomy_level as 1 | 2 | 3,
-            autoApproved: message.recent_decision.auto_approved
-          };
-          setDecisions((prev) => [newDecision, ...prev.slice(0, 9)]);
-        }
-
-        // Update metrics if provided - use functional update to avoid stale closures
-        if (message.metrics) {
-          setMetrics((prev) => ({
-            autonomousActions: message.metrics.autonomous_percentage ?? prev.autonomousActions,
-            preventionSavings: message.metrics.prevention_savings ?? prev.preventionSavings,
-            predictionAccuracy: message.metrics.prediction_accuracy ?? prev.predictionAccuracy,
-            activeIncidents: message.metrics.active_incidents ?? prev.activeIncidents
-          }));
-        }
-      }
-    });
-
-    return () => {
-      unsubscribe();
-      unsubscribeConnection();
-    };
-  }, []);
+  // Note: WebSocket removed - system uses REST API polling which works perfectly
 
   const performanceData = [
     { time: '6h ago', accuracy: 82, falsePositives: 15 },
@@ -246,7 +165,7 @@ export default function Dashboard() {
               lastUpdate={isConnected ? "live" : undefined}
             />
             <div className="text-xs font-mono text-muted-foreground">
-              {currentTime.toLocaleTimeString()}
+              {currentTime.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', second: '2-digit', hour12: true })}
             </div>
             <ThemeToggle />
           </div>
