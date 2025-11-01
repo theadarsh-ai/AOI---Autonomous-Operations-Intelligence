@@ -48,16 +48,13 @@ export function ActivityLogItem({
   const levelInfo = levelConfig[level];
   const Icon = levelInfo.icon;
 
-  // Convert 24-hour format to 12-hour format with AM/PM
-  const formatTime = (time: string) => {
-    const [hours24, minutes, seconds] = time.split(':');
-    const hours = parseInt(hours24);
-    const period = hours >= 12 ? 'PM' : 'AM';
-    const hours12 = hours % 12 || 12;
-    return `${hours12}:${minutes}:${seconds} ${period}`;
-  };
-
-  const formattedTime = formatTime(timestamp);
+  // Show current time (same as header) instead of activity timestamp
+  const formattedTime = new Date().toLocaleTimeString('en-US', { 
+    hour: 'numeric', 
+    minute: '2-digit', 
+    second: '2-digit', 
+    hour12: true 
+  });
 
   return (
     <div
