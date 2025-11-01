@@ -384,17 +384,25 @@ export default function Dashboard() {
                     <div className="text-xs text-muted-foreground">Agents are starting up and will log activity momentarily</div>
                   </div>
                 ) : (
-                  activities.map((activity: any) => (
-                    <ActivityLogItem
-                      key={activity.id}
-                      id={activity.id}
-                      timestamp={activity.timestamp}
-                      agent={activity.agent}
-                      action={activity.action}
-                      details={activity.details}
-                      level={activity.level || "info"}
-                    />
-                  ))
+                  <>
+                    <div className="sticky top-0 bg-background border-b px-4 py-3 flex items-center justify-between z-10">
+                      <div className="text-sm font-medium">Current Time</div>
+                      <div className="text-lg font-mono font-semibold" data-testid="text-activity-current-time">
+                        {currentTime.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', second: '2-digit', hour12: true })}
+                      </div>
+                    </div>
+                    {activities.map((activity: any) => (
+                      <ActivityLogItem
+                        key={activity.id}
+                        id={activity.id}
+                        timestamp={activity.timestamp}
+                        agent={activity.agent}
+                        action={activity.action}
+                        details={activity.details}
+                        level={activity.level || "info"}
+                      />
+                    ))}
+                  </>
                 )}
               </div>
             </Card>
