@@ -131,9 +131,9 @@ class BedrockAgentOrchestrator:
                 ]
             }
             
-            # Use Claude 3 Sonnet model
+            # Use Claude 3.5 Sonnet with inference profile (required for us-east-2)
             response = self.aws_clients.bedrock_runtime.invoke_model(
-                modelId="anthropic.claude-3-sonnet-20240229-v1:0",
+                modelId="us.anthropic.claude-3-5-sonnet-20240620-v1:0",
                 body=json.dumps(body)
             )
             

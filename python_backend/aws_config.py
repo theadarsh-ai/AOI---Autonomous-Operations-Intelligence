@@ -212,12 +212,12 @@ def get_aws_clients() -> AWSClients:
 
 def invoke_claude(
     prompt: str,
-    model_id: str = "anthropic.claude-3-sonnet-20240229-v1:0",
+    model_id: str = "us.anthropic.claude-3-5-sonnet-20240620-v1:0",
     max_tokens: int = 4096,
     temperature: float = 0.7
 ) -> Dict[str, Any]:
     """
-    Invoke Claude 3 Sonnet via AWS Bedrock
+    Invoke Claude 3.5 Sonnet via AWS Bedrock
     
     Args:
         prompt: The input prompt

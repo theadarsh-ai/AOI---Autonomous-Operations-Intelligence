@@ -73,13 +73,13 @@ class StrandsAgentOrchestrator:
         """Initialize Strands Agents with AWS Bedrock or mock mode"""
         try:
             if self.use_bedrock:
-                # Use AWS Bedrock with Claude 3 Sonnet
+                # Use AWS Bedrock with Claude 3.5 Sonnet (inference profile for us-east-2)
                 bedrock_model = BedrockModel(
-                    model_id="anthropic.claude-3-sonnet-20240229-v1:0",
+                    model_id="us.anthropic.claude-3-5-sonnet-20240620-v1:0",
                     temperature=0.3,
                     streaming=False
                 )
-                logger.info("✅ Using AWS Bedrock with Claude 3 Sonnet")
+                logger.info("✅ Using AWS Bedrock with Claude 3.5 Sonnet")
             else:
                 # Mock mode - uses Strands default (requires OpenAI or other provider)
                 bedrock_model = None
