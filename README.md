@@ -72,7 +72,7 @@ aws configure
 
 1. Go to [AWS Bedrock Console](https://console.aws.amazon.com/bedrock/)
 2. Navigate to "Model access" in the left sidebar
-3. Request access to **Claude 4 Sonnet** (us.anthropic.claude-sonnet-4-20250514-v1:0)
+3. Request access to **Claude 3 Sonnet** (us.anthropic.claude-sonnet-4-20250514-v1:0)
 4. Wait for approval (usually instant)
 
 #### Run with Bedrock
@@ -111,36 +111,6 @@ The system will automatically detect AWS credentials and use Bedrock.
 - Custom contract negotiations
 - Major infrastructure changes
 
-## 🔧 API Endpoints
-
-### Agent Status
-```bash
-GET /api/agents          # All agents
-GET /api/agents/{id}     # Specific agent
-```
-
-### Decisions
-```bash
-GET /api/decisions       # Recent autonomous decisions
-GET /api/decisions/{id}  # Decision details
-```
-
-### Predictions
-```bash
-GET /api/predictions     # Upcoming failure predictions
-```
-
-### System Metrics
-```bash
-GET /api/metrics         # Real-time system metrics
-GET /api/health          # Health check
-GET /api/status          # Complete system status
-```
-
-### WebSocket
-```bash
-WS /ws                   # Real-time updates stream
-```
 
 ## 🛠️ Development
 
@@ -221,14 +191,3 @@ agentcore launch
 - **AWS Bedrock**: https://aws.amazon.com/bedrock/
 - **Strands GitHub**: https://github.com/strands-agents/sdk-python
 
-## 🤝 Contributing
-
-This is an MVP demonstration of autonomous MSP management using AWS Bedrock and Strands Agents framework.
-
-## 📄 License
-
-MIT License - Free to use and modify
-
----
-
-**Built with**: Strands Agents SDK | AWS Bedrock | FastAPI | React | TypeScript
