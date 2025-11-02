@@ -51,9 +51,9 @@ To use actual AWS Bedrock with Claude Sonnet:
 
 #### Setup AWS Credentials
 
-**Method 1: Environment Variables (Recommended for Replit)**
+**Method 1: Environment Variables **
 
-Add these to your Replit Secrets:
+Add these to your .env:
 
 ```bash
 AWS_ACCESS_KEY_ID=your_access_key_here
